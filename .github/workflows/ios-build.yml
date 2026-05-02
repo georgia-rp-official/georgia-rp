@@ -1,0 +1,48 @@
+name: Build iOS IPA
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24 # გადავდივართ უახლეს ვერსიაზე
+
+      - name: Install Dependencies
+        run: npm install --force
+
+      - name: Build and Sync
+        run: |
+          npm run build --if-present
+          mkdir -p www && touch www/index.html
+          # ვანიჭებთ გაშვების უფლებას Capacitor-ს
+          chmod +x ./node_modules/.bin/cap
+          npx cap sync ios
+
+      - name: Xcode Build
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace \
+                     -scheme App \
+                     -configuration Debug \
+                     -sdk iphoneos \
+                     -derivedDataPath build \
+                     CODE_SIGNING_ALLOWED=NO
+
+      - name: Create IPA
+        run: |
+          mkdir -p Payload
+          cp -r build/Build/Products/Debug-iphoneos/App.app Payload/
+          zip -r GE-RP.ipa Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: GE-RP-iOS-App
+          path: GE-RP.ipa
