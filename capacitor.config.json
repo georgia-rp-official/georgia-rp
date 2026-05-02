@@ -1,0 +1,6 @@
+{
+  "appId": "com.georgia.rp",
+  "appName": "Georgia RP",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
